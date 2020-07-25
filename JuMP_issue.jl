@@ -57,28 +57,25 @@ function fba_JuMP(S, b, lb, ub, obj_idx::Integer;
         solver = GLPK.Optimizer)
     
 
-    lp_model = JuMP.Model(solver)
-    JuMP.set_silent(lp_model)
+    model = JuMP.Model(solver)
+    JuMP.set_silent(model)
 
     M,N = size(S)
 
     # Variables
-    JuMP.@variable(lp_model, lp_x[1:N])
+    JuMP.@variable(model, lb[i] <= x[i = 1:N] <= ub[i])
 
     # Constraints
-    JuMP.@constraint(lp_model, balance, S * lp_x .== b)
-    JuMP.@constraint(lp_model, bounds, lb .<= lp_x .<= ub)
+    JuMP.@constraint(model, S * x .== b)
 
     # objective
-    JuMP.@objective(lp_model, sense, lp_x[obj_idx])
+    JuMP.@objective(model, sense, x[obj_idx])
 
     # optimize
-    JuMP.optimize!(lp_model)
-    
-    #FBAout
-    obj_val = JuMP.value(lp_x[obj_idx])
-    
-    return (sol = JuMP.value.(lp_x), obj_val = obj_val, obj_idx = obj_idx)
+    JuMP.optimize!(model)
+
+    # FBAout    
+    return (sol = JuMP.value.(x), obj_val = JuMP.value(x[obj_idx]), obj_idx = obj_idx)
 end
 
 function fba_JuMP(model; kwargs...) 

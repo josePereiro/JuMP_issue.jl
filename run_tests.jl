@@ -5,6 +5,7 @@ try
     julia = Base.julia_cmd()
     
     println("\nRunning test with Clp0.7.1 ------------------ \n")
+    flush(stdout)
     # This must bring a Manifest with Clp v0.7.1
     run(`git checkout clp_0.7.1`)
     run(`$julia --project JuMP_issue.jl`)
@@ -12,6 +13,7 @@ try
     println()
 
     println("\nRunning test with Clp up to date ------------------ \n")
+    flush(stdout)
     # This must bring a Manifest with Clp v0.8
     run(`git checkout clp_up_to_date`) 
     run(`$julia --project JuMP_issue.jl`)

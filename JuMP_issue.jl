@@ -90,7 +90,9 @@ end
 
 # +
 function fba_MathProgBase(S, b, lb, ub, obj_idx::Integer; 
-        sense = -1.0, solver = Clp.ClpSolver())
+        sense = -1.0, 
+        solver = Clp.ClpSolver())
+        
     sv = zeros(size(S, 2));
     sv[obj_idx] = sense
     sol = MathProgBase.HighLevelInterface.linprog(

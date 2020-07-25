@@ -21,6 +21,7 @@ import MathProgBase
 import JSON
 using SparseArrays
 using BenchmarkTools
+using InteractiveUtils
 
 # ---
 # # Tools
@@ -119,6 +120,11 @@ end
 
 model_files = ["toy_model.json", "e_coli_core.json", "iJR904.json", "HumanGEM.json"] # HumanGEM could take some time
 @assert all(isfile.(model_files))
+
+# # versioninfo
+versioninfo()
+println()
+flush(stdout)
 
 # precompaling
 model = load_model("toy_model.json")

@@ -50,27 +50,6 @@ rxnindex(model, ider::AbstractString) = findfirst(isequal(ider), model["rxns"])
 
 # ### JuMP
 
-# ### Convex
-
-# +
-function fba_Convex(S, b, lb, ub, obj_idx; solver = GLPK.Optimizer)
-    M, N = size(S)
-    x = Convex.Variable(N)
-    p = Convex.maximize(x[obj_idx]) 
-    p.constraints += S * x == b
-    p.constraints += x >= lb
-    p.constraints += x <= ub
-    Convex.solve!(p, solver)
-    
-    v = first(p.objective.children).value |> vec
-    return (sol = v, obj_val = v[obj_idx], obj_idx = obj_idx)
-end
-
-function fba_Convex(model; kwargs...)
-    obj_idx = rxnindex(model, model["obj_ider"])
-    return fba_Convex(model["S"], model["b"], model["lb"], model["ub"], obj_idx; kwargs...)
-end
-
 # +
 function fba_JuMP(S, b, lb, ub, obj_idx::Integer; 
         sense = JuMP.MOI.MAX_SENSE, err = [], 
@@ -79,7 +58,6 @@ function fba_JuMP(S, b, lb, ub, obj_idx::Integer;
 
     lp_model = JuMP.Model(solver)
     JuMP.set_silent(lp_model)
-    JuMP
 
     M,N = size(S)
 
@@ -138,20 +116,19 @@ end
 # # Tests
 # ---
 
-model_files = ["toy_model.json", "e_coli_core.json", "iJR904.json", "HumanGEM.json"] # HumanGEM could take a really long time
+model_files = ["toy_model.json", "e_coli_core.json", "iJR904.json", "HumanGEM.json"] # HumanGEM could take some time
 @assert all(isfile.(model_files))
 
 # precompaling
 model = load_model("toy_model.json")
-@btime fba_JuMP(model; solver = GLPK.Optimizer)
-@btime fba_JuMP(model; solver = Clp.Optimizer);
-@btime fba_MathProgBase(model; solver = Clp.ClpSolver());
+fba_JuMP(model; solver = GLPK.Optimizer)
+fba_JuMP(model; solver = Clp.Optimizer);
+fba_MathProgBase(model; solver = Clp.ClpSolver());
 
 for model_file in model_files
     model = load_model(model_file)
     println("\nModel: $(basename(model_file)) size: ", size(model["S"]))
     
-    model = load_model(model_file)
     println("fba_JuMP-GLPK.Optimizer")
     sol1 = @btime fba_JuMP(model; solver = GLPK.Optimizer)
     flush(stdout); 

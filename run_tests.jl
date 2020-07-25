@@ -11,7 +11,7 @@ try
     flush(stdout)
     println()
 
-    println("\nRunning test with Clp up tu day ------------------ \n")
+    println("\nRunning test with Clp up to date ------------------ \n")
     # This must bring a Manifest with Clp v0.8
     run(`git checkout clp_up_to_date`) 
     run(`$julia --project JuMP_issue.jl`)

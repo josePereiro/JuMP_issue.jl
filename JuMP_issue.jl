@@ -14,6 +14,7 @@
 #     name: julia-1.1
 # ---
 
+import Pkg
 import JuMP
 import GLPK
 import Clp
@@ -119,7 +120,14 @@ model_files = ["toy_model.json", "e_coli_core.json", "iJR904.json", "HumanGEM.js
 @assert all(isfile.(model_files))
 
 # # versioninfo
+println("\nvesioninfo -------------------")
 versioninfo()
+println()
+flush(stdout)
+
+# # Project
+println("\nProject.toml -------------------")
+Pkg.status(mode = Pkg.PKGMODE_PROJECT)
 println()
 flush(stdout)
 

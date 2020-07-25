@@ -52,7 +52,7 @@ rxnindex(model, ider::AbstractString) = findfirst(isequal(ider), model["rxns"])
 
 # +
 function fba_JuMP(S, b, lb, ub, obj_idx::Integer; 
-        sense = JuMP.MOI.MAX_SENSE, err = [], 
+        sense = JuMP.MOI.MAX_SENSE, 
         solver = GLPK.Optimizer)
     
 
@@ -76,7 +76,6 @@ function fba_JuMP(S, b, lb, ub, obj_idx::Integer;
     
     #FBAout
     obj_val = JuMP.value(lp_x[obj_idx])
-    obj_val in err && error("FBA failed, error value returned, obj_val[$(obj_idx)] = $(obj_val)!!!")
     
     return (sol = JuMP.value.(lp_x), obj_val = obj_val, obj_idx = obj_idx)
 end

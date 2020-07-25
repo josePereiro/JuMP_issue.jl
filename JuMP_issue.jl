@@ -84,32 +84,6 @@ function fba_JuMP(model; kwargs...)
 end
 # -
 
-# ### MathProgBase
-
-# +
-function fba_MathProgBase(S, b, lb, ub, obj_idx::Integer; 
-        sense = -1.0, 
-        solver = Clp.ClpSolver())
-        
-    sv = zeros(size(S, 2));
-    sv[obj_idx] = sense
-    sol = MathProgBase.HighLevelInterface.linprog(
-        sv, # Opt sense vector 
-        S, # Stoichiometric matrix
-        b, # row lb
-        b, # row ub
-        lb, # column lb
-        ub, # column ub
-        solver);
-    isempty(sol.sol) && error("FBA failed, empty solution returned!!!")
-    return (sol = sol.sol, obj_val = sol.sol[obj_idx], obj_idx = obj_idx)
-end
-
-function fba_MathProgBase(model; kwargs...)
-    obj_idx = rxnindex(model, model["obj_ider"])
-    return fba_MathProgBase(model["S"], model["b"], model["lb"], model["ub"], obj_idx; kwargs...)
-end
-# -
 
 # ---
 # # Tests
@@ -127,7 +101,6 @@ flush(stdout)
 _model = load_model("toy_model.json")
 fba_JuMP(_model; solver = GLPK.Optimizer)
 fba_JuMP(_model; solver = Clp.Optimizer);
-fba_MathProgBase(_model; solver = Clp.ClpSolver());
 
 for model_file in model_files
     model = load_model(model_file)
@@ -143,10 +116,5 @@ for model_file in model_files
     println("obj_val: ", sol2.obj_val)
     flush(stdout); 
     
-    println("\nfba_MathProgBase-ClpSolver")
-    sol3 = @btime fba_MathProgBase($model; solver = Clp.ClpSolver());
-    println("obj_val: ", sol3.obj_val)
-    flush(stdout); 
-    
-    @assert isapprox(sol1.obj_val, sol2.obj_val) && isapprox(sol1.obj_val, sol3.obj_val)
+    @assert isapprox(sol1.obj_val, sol2.obj_val, atol = 1e-5)
 end

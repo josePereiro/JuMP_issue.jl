@@ -14,10 +14,8 @@
 #     name: julia-1.1
 # ---
 
-import Serialization: serialize, deserialize
 import JuMP
 import GLPK
-import Convex
 import Clp
 import MathProgBase
 import JSON

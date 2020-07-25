@@ -124,25 +124,28 @@ println()
 flush(stdout)
 
 # precompaling
-model = load_model("toy_model.json")
-fba_JuMP(model; solver = GLPK.Optimizer)
-fba_JuMP(model; solver = Clp.Optimizer);
-fba_MathProgBase(model; solver = Clp.ClpSolver());
+_model = load_model("toy_model.json")
+fba_JuMP(_model; solver = GLPK.Optimizer)
+fba_JuMP(_model; solver = Clp.Optimizer);
+fba_MathProgBase(_model; solver = Clp.ClpSolver());
 
 for model_file in model_files
     model = load_model(model_file)
-    println("\nModel: $(basename(model_file)) size: ", size(model["S"]))
+    println("\nModel: $(basename(model_file)) size: ", size(model["S"]), " -------------------")
     
-    println("fba_JuMP-GLPK.Optimizer")
-    sol1 = @btime fba_JuMP(model; solver = GLPK.Optimizer)
+    println("\nfba_JuMP-GLPK.Optimizer")
+    sol1 = @btime fba_JuMP($model; solver = GLPK.Optimizer)
+    println("obj_val: ", sol1.obj_val)
     flush(stdout); 
     
-    println("fba_JuMP-Clp.Optimizer")
-    sol2 = @btime fba_JuMP(model; solver = Clp.Optimizer);
+    println("\nfba_JuMP-Clp.Optimizer")
+    sol2 = @btime fba_JuMP($model; solver = Clp.Optimizer);
+    println("obj_val: ", sol2.obj_val)
     flush(stdout); 
     
-    println("fba_MathProgBase-ClpSolver")
-    sol3 = @btime fba_MathProgBase(model; solver = Clp.ClpSolver());
+    println("\nfba_MathProgBase-ClpSolver")
+    sol3 = @btime fba_MathProgBase($model; solver = Clp.ClpSolver());
+    println("obj_val: ", sol3.obj_val)
     flush(stdout); 
     
     @assert isapprox(sol1.obj_val, sol2.obj_val) && isapprox(sol1.obj_val, sol3.obj_val)

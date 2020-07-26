@@ -184,5 +184,5 @@ for model_file in model_files
         push!(obj_vals, sol.obj_val)
     end
     
-    @assert all(isapprox.(obj_vals[1], obj_vals))
+    @assert all(isapprox.(obj_vals[1], obj_vals, atol = 1e-3))
 end

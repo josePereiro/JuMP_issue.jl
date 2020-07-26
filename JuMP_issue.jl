@@ -19,6 +19,7 @@ import JuMP
 import GLPK
 import Clp
 import MathProgBase
+import MatrixOptInterface
 import JSON
 using SparseArrays
 using BenchmarkTools
@@ -49,6 +50,28 @@ rxnindex(model, ider::AbstractString) = findfirst(isequal(ider), model["rxns"])
 # ---
 # # FBA
 # ---
+
+# ### MatrixOptInterface
+function fba_MatrixOptInterface(S, b, lb, ub, obj_idx::Integer; 
+    solver = Clp.Optimizer, sense = JuMP.MOI.MAX_SENSE)
+
+    c = zeros(size(S, 2))
+    c[obj_idx] = 1.0
+    lp = MatrixOptInterface.LPForm(sense, c, S, b, b, lb, ub)
+
+    lp_model = JuMP.Model()
+    JuMP.MOI.copy_to(lp_model, lp)
+    JuMP.set_optimizer(lp_model, Clp.Optimizer)
+    JuMP.set_silent(lp_model)
+    JuMP.optimize!(lp_model)
+    xs = JuMP.value.(JuMP.all_variables(lp_model))
+    return (sol = xs, obj_val = xs[obj_idx], obj_idx = obj_idx)
+end
+
+function fba_MatrixOptInterface(model; kwargs...)
+    obj_idx = rxnindex(model, model["obj_ider"])
+    return fba_MatrixOptInterface(model["S"], model["b"], model["lb"], model["ub"], obj_idx; kwargs...)
+end
 
 # ### JuMP
 
@@ -137,24 +160,42 @@ fba_JuMP(_model; solver = GLPK.Optimizer)
 fba_JuMP(_model; solver = Clp.Optimizer);
 fba_MathProgBase(_model; solver = Clp.ClpSolver());
 
+obj_vals = []
 for model_file in model_files
+
     model = load_model(model_file)
     println("\nModel: $(basename(model_file)) size: ", size(model["S"]), " -------------------")
     
-    println("\nfba_JuMP-GLPK.Optimizer")
-    sol1 = @btime fba_JuMP($model; solver = GLPK.Optimizer)
-    println("obj_val: ", sol1.obj_val)
+    println("\fba_MatrixOptInterface-GLPK.Optimizer")
+    sol = @btime fba_MatrixOptInterface($model; solver = GLPK.Optimizer)
+    println("obj_val: ", sol.obj_val)
     flush(stdout); 
+    push!(obj_vals, sol.obj_val)
+
+    println("\fba_MatrixOptInterface-Clp.Optimizer")
+    sol = @btime fba_MatrixOptInterface($model; solver = Clp.Optimizer)
+    println("obj_val: ", sol.obj_val)
+    flush(stdout); 
+    push!(obj_vals, sol.obj_val)
+
+    println("\nfba_JuMP-GLPK.Optimizer")
+    sol = @btime fba_JuMP($model; solver = GLPK.Optimizer)
+    println("obj_val: ", sol.obj_val)
+    flush(stdout); 
+    push!(obj_vals, sol.obj_val)
+
     
     println("\nfba_JuMP-Clp.Optimizer")
-    sol2 = @btime fba_JuMP($model; solver = Clp.Optimizer);
-    println("obj_val: ", sol2.obj_val)
-    flush(stdout); 
+    sol = @btime fba_JuMP($model; solver = Clp.Optimizer);
+    println("obj_val: ", sol.obj_val)
+    flush(stdout);
+    push!(obj_vals, sol.obj_val)
     
     println("\nfba_MathProgBase-ClpSolver")
-    sol3 = @btime fba_MathProgBase($model; solver = Clp.ClpSolver());
-    println("obj_val: ", sol3.obj_val)
+    sol = @btime fba_MathProgBase($model; solver = Clp.ClpSolver());
+    println("obj_val: ", sol.obj_val)
     flush(stdout); 
+    push!(obj_vals, sol.obj_val)
     
-    @assert isapprox(sol1.obj_val, sol2.obj_val) && isapprox(sol1.obj_val, sol3.obj_val)
+    @assert all(isapprox.(obj_vals[1], obj_vals))
 end

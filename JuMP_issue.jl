@@ -156,46 +156,33 @@ flush(stdout)
 
 # precompaling
 _model = load_model("toy_model.json")
+fba_MatrixOptInterface(_model; solver = GLPK.Optimizer)
+fba_MatrixOptInterface(_model; solver = Clp.Optimizer);
 fba_JuMP(_model; solver = GLPK.Optimizer)
 fba_JuMP(_model; solver = Clp.Optimizer);
 fba_MathProgBase(_model; solver = Clp.ClpSolver());
 
-obj_vals = []
-for model_file in model_files
+tests = [
+        ("fba_MatrixOptInterface-GLPK.Optimizer", fba_MatrixOptInterface, GLPK.Optimizer),
+        ("fba_MatrixOptInterface-Clp.Optimizer", fba_MatrixOptInterface, Clp.Optimizer),
+        ("fba_JuMP-GLPK.Optimizer", fba_JuMP, GLPK.Optimizer),
+        ("fba_JuMP-Clp.Optimizer", fba_JuMP, Clp.Optimizer),
+        ("fba_MathProgBase-ClpSolver", fba_MathProgBase, Clp.ClpSolver()),
+    ]
 
+for model_file in model_files
+        
+    obj_vals = []
     model = load_model(model_file)
     println("\nModel: $(basename(model_file)) size: ", size(model["S"]), " -------------------")
-    
-    println("\fba_MatrixOptInterface-GLPK.Optimizer")
-    sol = @btime fba_MatrixOptInterface($model; solver = GLPK.Optimizer)
-    println("obj_val: ", sol.obj_val)
-    flush(stdout); 
-    push!(obj_vals, sol.obj_val)
 
-    println("\fba_MatrixOptInterface-Clp.Optimizer")
-    sol = @btime fba_MatrixOptInterface($model; solver = Clp.Optimizer)
-    println("obj_val: ", sol.obj_val)
-    flush(stdout); 
-    push!(obj_vals, sol.obj_val)
-
-    println("\nfba_JuMP-GLPK.Optimizer")
-    sol = @btime fba_JuMP($model; solver = GLPK.Optimizer)
-    println("obj_val: ", sol.obj_val)
-    flush(stdout); 
-    push!(obj_vals, sol.obj_val)
-
-    
-    println("\nfba_JuMP-Clp.Optimizer")
-    sol = @btime fba_JuMP($model; solver = Clp.Optimizer);
-    println("obj_val: ", sol.obj_val)
-    flush(stdout);
-    push!(obj_vals, sol.obj_val)
-    
-    println("\nfba_MathProgBase-ClpSolver")
-    sol = @btime fba_MathProgBase($model; solver = Clp.ClpSolver());
-    println("obj_val: ", sol.obj_val)
-    flush(stdout); 
-    push!(obj_vals, sol.obj_val)
+    for (tname, fba_method, solver_) in tests
+        println("\n$tname")
+        sol = @btime $fba_method($model; solver = $solver_)
+        println("obj_val: ", sol.obj_val)
+        flush(stdout); 
+        push!(obj_vals, sol.obj_val)
+    end
     
     @assert all(isapprox.(obj_vals[1], obj_vals))
 end
